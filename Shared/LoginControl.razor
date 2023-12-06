@@ -1,0 +1,53 @@
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<LoginControl> Logger;
+
+@if (User.Identity?.Name != null)
+{
+    <img src="@Avatar"/>
+    <b>You are logged in as: @GivenName @Surname</b>
+    <a class="ml-md-auto btn btn-primary"
+       href="/Identity/Logout"
+       target="_top">
+        Logout
+    </a>
+}
+else
+{
+    <a class="ml-md-auto btn btn-primary"
+       href="/Identity/Login"
+       target="_top">
+        Login
+    </a>
+}
+
+@code {
+    private ClaimsPrincipal User;
+    private string GivenName;
+    private string Surname;
+    private string Avatar;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+
+            // Try to get the GivenName
+            var givenName = User.FindFirst(ClaimTypes.GivenName);
+            GivenName = givenName != null ? givenName.Value : User.Identity?.Name ?? "Unknown";
+
+            var surname = User.FindFirst(ClaimTypes.Surname);
+            Surname = surname != null ? surname.Value : User.Identity?.Name ?? "Unknown";
+
+            var avatar = User.FindFirst("urn:google:image");
+            Avatar = avatar != null ? avatar.Value : "";
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Failed to resolve the authenticated user");
+        }
+    }
+
+}
